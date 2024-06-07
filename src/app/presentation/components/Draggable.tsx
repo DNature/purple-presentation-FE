@@ -8,6 +8,7 @@ interface DraggableProps extends PropsWithChildren {
   id: string;
   top?: number;
   left?: number;
+  setCurrentContent(): void;
 }
 
 export const Draggable: React.FC<DraggableProps> = ({
@@ -16,6 +17,7 @@ export const Draggable: React.FC<DraggableProps> = ({
   id,
   top,
   left,
+  setCurrentContent,
 }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
@@ -32,6 +34,7 @@ export const Draggable: React.FC<DraggableProps> = ({
       className="w-[100px] absolute h-[100px] p-2 bg-gray-300 "
       ref={setNodeRef}
       style={style}
+      onFocusCapture={setCurrentContent}
       {...attributes}
     >
       <div className="relative">

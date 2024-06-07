@@ -23,8 +23,8 @@ export const PageEditor: React.FC = ({}) => {
     dispatch({ type: "ADD_CONTENT", payload: type });
   };
 
-  const handleFileChange = (event: any) => {
-    const file = event.target.files[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -41,6 +41,24 @@ export const PageEditor: React.FC = ({}) => {
     }
   };
 
+  const handleTextChange = (
+    event: React.ChangeEvent<HTMLTextAreaElement>,
+    contentId: string,
+  ) => {
+    dispatch({
+      type: "SET_CURRENT_CONTENT_BY_ID",
+      payload: contentId,
+    });
+    if (!state.currentContent) return;
+    dispatch({
+      type: "SET_CURRENT_CONTENT",
+      payload: {
+        ...state.currentContent,
+        data: event.target.value,
+      },
+    });
+  };
+
   const handleRemoveContent = async (content: Content) => {
     await deleteContent(content.id);
     dispatch({ type: "REMOVE_CONTENT", payload: content });
@@ -54,6 +72,13 @@ export const PageEditor: React.FC = ({}) => {
         ...content,
         pageId: state.currentPage?.id,
       });
+    });
+  };
+
+  const setCurrentContent = (contentId: string) => {
+    dispatch({
+      type: "SET_CURRENT_CONTENT_BY_ID",
+      payload: contentId,
     });
   };
 
@@ -74,19 +99,18 @@ export const PageEditor: React.FC = ({}) => {
             >
               Add Image Content
             </button>
+            <button
+              className="btn"
+              onClick={() => handleAddContent(ContentType.Video)}
+            >
+              Add Video Content
+            </button>
             <button className="btn ml-auto" onClick={handleSaveContent}>
               Save content
             </button>
           </div>
           <div className="relative min-h-[700px] border-2">
             <DndContext
-              onDragStart={(event) => {
-                const contentId = event.active.id;
-                dispatch({
-                  type: "SET_CURRENT_CONTENT_BY_ID",
-                  payload: contentId,
-                });
-              }}
               sensors={sensors}
               onDragEnd={({ delta }) => {
                 if (!state.currentContent) return;
@@ -108,8 +132,15 @@ export const PageEditor: React.FC = ({}) => {
                       id={content.id}
                       top={content.y}
                       left={content.x}
+                      setCurrentContent={() => setCurrentContent(content.id)}
                     >
-                      <textarea className="w-full text-center"></textarea>
+                      <textarea
+                        defaultValue={content.data}
+                        onChange={(event) => {
+                          handleTextChange(event, content.id);
+                        }}
+                        className="w-full text-center"
+                      />
                     </Draggable>
                   )}
                   {content.type === ContentType.Image && (
@@ -122,6 +153,9 @@ export const PageEditor: React.FC = ({}) => {
                           id={content.id}
                           top={content.y}
                           left={content.x}
+                          setCurrentContent={() =>
+                            setCurrentContent(content.id)
+                          }
                         >
                           <img
                             src={content.data}
@@ -139,7 +173,32 @@ export const PageEditor: React.FC = ({}) => {
                     </>
                   )}
                   {content.type === ContentType.Video && (
-                    <input type="file" accept="video/*" />
+                    <>
+                      {content.data ? (
+                        <Draggable
+                          handleRemoveContent={() =>
+                            handleRemoveContent(content)
+                          }
+                          id={content.id}
+                          top={content.y}
+                          left={content.x}
+                          setCurrentContent={() =>
+                            setCurrentContent(content.id)
+                          }
+                        >
+                          <video controls className="w-full">
+                            <source src={content.data} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                        </Draggable>
+                      ) : (
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={handleFileChange}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               ))}
